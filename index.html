@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ใบสำคัญรับเงิน</title>
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --bg: #f3f4f6;
+    }
+    * { box-sizing: border-box; font-family: 'Sarabun', 'Tahoma', sans-serif; }
+    body { background-color: var(--bg); margin: 0; padding: 10px; color: #1f2937; }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 25px 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 { text-align: center; color: var(--primary); margin: 0 0 2px 0; font-size: 24px; letter-spacing: 0.5px; }
+    .subtitle { text-align: center; color: #6b7280; margin-bottom: 20px; font-size: 13px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-weight: bold; margin-bottom: 3px; font-size: 13px; color: #374151; }
+    input, select, textarea {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      font-size: 13px;
+      background-color: #fff;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.1);
+    }
+
+    .section-title {
+      background: #f8fafc;
+      padding: 6px 10px;
+      border-left: 4px solid var(--primary);
+      font-weight: bold;
+      margin: 15px 0 10px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+    th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; font-size: 13px; }
+    th { background: #f1f5f9; text-align: center; color: #1f2937; }
+
+    .btn-action {
+      background: #ef4444; color: white; border: none;
+      padding: 2px 6px; border-radius: 4px; font-size: 11px; cursor: pointer;
+    }
+    .btn-add {
+      background: #059669; color: white; border: none;
+      padding: 3px 8px; border-radius: 4px; font-size: 12px; cursor: pointer;
+    }
+
+    .signature-pad-container {
+      border: 1px dashed #94a3b8;
+      background: #fafafa;
+      border-radius: 4px;
+      position: relative;
+    }
+    canvas { width: 100%; height: 100px; cursor: crosshair; display: block; }
+    
+    .btn-clear {
+      position: absolute; right: 5px; top: 5px;
+      background: #ef4444; color: white; border: none;
+      padding: 2px 6px; border-radius: 3px; font-size: 11px; cursor: pointer;
+    }
+
+    .actions {
+      display: flex; gap: 10px; justify-content: center; margin-top: 25px;
+    }
+    button.btn-main {
+      background: var(--primary); color: white; border: none;
+      padding: 12px 28px; font-size: 15px; border-radius: 6px; cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button.btn-main:hover { opacity: 0.9; }
+
+    /* คำสั่งบังคับหน้ากระดาษ A4 และซ่อนส่วนหัว-ท้ายของเบราว์เซอร์อัตโนมัติ */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 8mm;
+      }
+      /* บังคับซ่อนส่วนหัว/ท้าย (Date, URL, Title) ที่เบราว์เซอร์มักจะพยายามพิมพ์ออกมา */
+      @page :header { display: none; content: ""; }
+      @page :footer { display: none; content: ""; }
+
+      body {
+        background: #fff;
+        padding: 0;
+        font-size: 13px;
+        -webkit-print-color-adjust: exact;
+      }
+      .container {
+        box-shadow: none;
+        padding: 0;
+        max-width: 100%;
+        width: 100%;
+      }
+      .no-print, .btn-clear, button {
+        display: none !important;
+      }
+      input, select, textarea {
+        border: none !important;
+        background: transparent !important;
+        padding: 2px 0 !important;
+        font-size: 13px;
+      }
+      .signature-pad-container {
+        border: none !important;
+        background: transparent !important;
+      }
+      canvas {
+        border-bottom: 1px solid #000;
+        height: 90px;
+      }
+      .section-title {
+        background: transparent !important;
+        border-left: none !important;
+        padding: 2px 0;
+        margin: 10px 0 5px 0;
+        font-size: 14px;
+      }
+      .form-group {
+        margin-bottom: 8px;
+      }
+      table th, table td {
+        padding: 5px 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>ใบสำคัญรับเงิน</h1>
+  <div class="subtitle">PAYMENT VOUCHER</div>
+
+  <div class="grid-2">
+    <div class="form-group" style="display: flex; gap: 5px; align-items: flex-end;">
+      <div style="flex-grow: 1;">
+        <label>เลขที่เอกสาร:</label>
+        <input type="text" id="docNo" style="font-weight: bold; color: var(--primary);">
+      </div>
+      <button type="button" class="no-print" onclick="resetDocNo()" title="รีเซ็ตเลขที่เอกสาร" style="padding: 7px 10px; background: #e5e7eb; border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; font-size: 12px;">⚙️</button>
+    </div>
+    <div class="form-group">
+      <label>วันที่:</label>
+      <input type="date" id="docDate">
+    </div>
+  </div>
+
+  <div class="section-title">ข้อมูลผู้จ่ายเงิน (กิจการ / ผู้ซื้อ)</div>
+  <div class="grid-2">
+    <div class="form-group">
+      <label>ชื่อ-นามสกุล / ชื่อกิจการ:</label>
+      <input type="text" id="buyerName" placeholder="กรอกชื่อของคุณหรือร้านค้า">
+    </div>
+    <div class="form-group">
+      <label>เลขประจำตัวประชาชน / ผู้เสียภาษี:</label>
+      <input type="text" id="buyerTaxId" placeholder="เลข 13 หลัก">
+    </div>
+  </div>
+  <div class="form-group">
+    <label>ที่อยู่:</label>
+    <input type="text" id="buyerAddress" placeholder="ที่อยู่ผู้จ่ายเงิน">
+  </div>
+  <button type="button" class="no-print" onclick="saveBuyerInfo()" style="font-size:11px; margin-bottom:5px; padding: 3px 8px; cursor: pointer; background: #e5e7eb; border: 1px solid #d1d5db; border-radius: 4px;">💾 บันทึกข้อมูลผู้จ่ายเงินไว้ใช้ครั้งถัดไป</button>
+
+  <div class="section-title">ข้อมูลผู้รับเงิน (ผู้ขาย)</div>
+  <div class="grid-2">
+    <div class="form-group">
+      <label>ชื่อ-นามสกุล ผู้รับเงิน:</label>
+      <input type="text" id="sellerName" placeholder="ชื่อ-นามสกุล ผู้ขายสินค้า">
+    </div>
+    <div class="form-group">
+      <label>เลขประจำตัวประชาชน:</label>
+      <input type="text" id="sellerTaxId" maxlength="13" placeholder="x-xxxx-xxxxx-xx-x">
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="form-group">
+      <label>เบอร์โทรศัพท์:</label>
+      <input type="text" id="sellerPhone" placeholder="เบอร์โทรติดต่อ">
+    </div>
+    <div class="form-group">
+      <label>ที่อยู่ตามบัตรประชาชน:</label>
+      <input type="text" id="sellerAddress" placeholder="บ้านเลขที่ หมู่ ตําบล อำเภอ จังหวัด">
+    </div>
+  </div>
+
+  <div class="section-title">การชำระเงิน</div>
+  <div class="grid-3">
+    <div class="form-group">
+      <label>วิธีการชำระเงิน:</label>
+      <select id="payMethod" onchange="togglePayChannel()">
+        <option value="โอนเงิน">โอนเงินเข้าบัญชี</option>
+        <option value="เงินสด">เงินสด</option>
+      </select>
+    </div>
+    <div class="form-group" id="groupRef">
+      <label>เลขที่อ้างอิงสลิป / รายการ:</label>
+      <input type="text" id="payRef" placeholder="เลขอ้างอิงการโอน">
+    </div>
+    <div class="form-group" id="groupTime">
+      <label>เวลาที่โอนเงิน:</label>
+      <input type="text" id="payTime" placeholder="เช่น 14:35 น.">
+    </div>
+  </div>
+
+  <div class="section-title">
+    <span>รายการสินค้า</span>
+    <button type="button" class="btn-add no-print" onclick="addRow()">+ เพิ่มแถว</button>
+  </div>
+  <table id="itemTable">
+    <thead>
+      <tr>
+        <th style="width: 50px;">ลำดับ</th>
+        <th>รายการสินค้า</th>
+        <th style="width: 140px;">จำนวนเงิน (บาท)</th>
+        <th style="width: 50px;" class="no-print">ลบ</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="text-align: center;" class="row-num">1</td>
+        <td><input type="text" placeholder="ระบุรายการสินค้า"></td>
+        <td><input type="number" class="itemAmount" oninput="calculateTotal()" placeholder="0.00" style="text-align: right;"></td>
+        <td style="text-align: center;" class="no-print"><button type="button" class="btn-action" onclick="deleteRow(this)">X</button></td>
+      </tr>
+      <tr>
+        <td style="text-align: center;" class="row-num">2</td>
+        <td><input type="text" placeholder="ระบุรายการสินค้า"></td>
+        <td><input type="number" class="itemAmount" oninput="calculateTotal()" placeholder="0.00" style="text-align: right;"></td>
+        <td style="text-align: center;" class="no-print"><button type="button" class="btn-action" onclick="deleteRow(this)">X</button></td>
+      </tr>
+      <tr>
+        <td style="text-align: center;" class="row-num">3</td>
+        <td><input type="text" placeholder="ระบุรายการสินค้า"></td>
+        <td><input type="number" class="itemAmount" oninput="calculateTotal()" placeholder="0.00" style="text-align: right;"></td>
+        <td style="text-align: center;" class="no-print"><button type="button" class="btn-action" onclick="deleteRow(this)">X</button></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top: 10px; text-align: right; font-weight: bold; font-size: 15px;">
+    จำนวนเงินรวมทั้งสิ้น: <span id="totalText" style="color: var(--primary);">0.00</span> บาท
+  </div>
+  <div style="margin-top: 2px; text-align: right; color: #4b5563; font-style: italic; font-size: 12px;" id="thaiText">
+    (ศูนย์บาทถ้วน)
+  </div>
+
+  <div class="section-title">การลงนาม</div>
+  <div class="grid-2" style="margin-top: 10px;">
+    <div style="text-align: center;">
+      <label>ลงลายมือชื่อ ผู้รับเงิน</label>
+      <div class="signature-pad-container" style="margin-top:3px;">
+        <button class="btn-clear no-print" onclick="clearSignature()">ล้าง</button>
+        <canvas id="sigCanvas"></canvas>
+      </div>
+      <div style="margin-top:2px; font-size:11px; color:#666;">(ลงนาม/เซ็นชื่อด้วยนิ้วมือหรือปากกา)</div>
+    </div>
+    <div style="text-align: center;">
+      <label>ลงลายมือชื่อ ผู้จ่ายเงิน</label>
+      <div style="height: 100px; border-bottom: 1px dashed #94a3b8; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 5px;">
+        <span id="buyerSignName" style="font-size: 13px;">(...................................................)</span>
+      </div>
+      <div style="margin-top:2px; font-size:11px; color:#666;">(ผู้จ่ายเงิน / ตัวแทนกิจการ)</div>
+    </div>
+  </div>
+
+  <div class="actions no-print">
+    <button class="btn-main" onclick="handlePrint()">🖨️ พิมพ์เอกสาร / ออกเครื่องปริ้นท์</button>
+  </div>
+</div>
+
+<script>
+  // ตั้งค่าวันที่ปัจจุบัน
+  document.getElementById('docDate').valueAsDate = new Date();
+
+  // ระบบจัดการเลขที่เอกสารอัตโนมัติ (Auto-Increment)
+  function initDocNo() {
+    let currentNo = localStorage.getItem('lastDocNo');
+    if (!currentNo) {
+      currentNo = 'PV-202610-0001';
+    }
+    document.getElementById('docNo').value = currentNo;
+  }
+
+  function resetDocNo() {
+    let newNo = prompt('กรุณาระบุเลขที่เอกสารเริ่มต้นใหม่:', document.getElementById('docNo').value);
+    if (newNo) {
+      localStorage.setItem('lastDocNo', newNo);
+      document.getElementById('docNo').value = newNo;
+    }
+  }
+
+  function incrementDocNo() {
+    let currentNo = document.getElementById('docNo').value;
+    let parts = currentNo.split('-');
+    let lastPart = parts[parts.length - 1];
+    let prefix = currentNo.substring(0, currentNo.lastIndexOf('-') + 1);
+    
+    let nextNum = parseInt(lastPart, 10) + 1;
+    if (!isNaN(nextNum)) {
+      let paddedNum = String(nextNum).padStart(lastPart.length, '0');
+      let nextDocNo = prefix + paddedNum;
+      localStorage.setItem('lastDocNo', nextDocNo);
+    }
+  }
+
+  function handlePrint() {
+    incrementDocNo();
+    window.print();
+  }
+
+  // ระบบซ่อน/แสดงช่องอ้างอิงตามวิธีชำระเงิน
+  function togglePayChannel() {
+    const method = document.getElementById('payMethod').value;
+    const groupRef = document.getElementById('groupRef');
+    const groupTime = document.getElementById('groupTime');
+    if(method === 'เงินสด') {
+      groupRef.style.display = 'none';
+      groupTime.style.display = 'none';
+    } else {
+      groupRef.style.display = 'block';
+      groupTime.style.display = 'block';
+    }
+  }
+
+  // โหลดข้อมูลเมื่อเปิดเว็บ
+  window.onload = function() {
+    initDocNo();
+    if(localStorage.getItem('buyerName')) {
+      document.getElementById('buyerName').value = localStorage.getItem('buyerName');
+      document.getElementById('buyerTaxId').value = localStorage.getItem('buyerTaxId');
+      document.getElementById('buyerAddress').value = localStorage.getItem('buyerAddress');
+      updateSignName();
+    }
+    togglePayChannel();
+  };
+
+  function saveBuyerInfo() {
+    localStorage.setItem('buyerName', document.getElementById('buyerName').value);
+    localStorage.setItem('buyerTaxId', document.getElementById('buyerTaxId').value);
+    localStorage.setItem('buyerAddress', document.getElementById('buyerAddress').value);
+    updateSignName();
+    alert('บันทึกข้อมูลผู้จ่ายเงินเรียบร้อยแล้ว');
+  }
+
+  document.getElementById('buyerName').addEventListener('input', updateSignName);
+  function updateSignName() {
+    const val = document.getElementById('buyerName').value;
+    document.getElementById('buyerSignName').innerText = val ? `(${val})` : '(...................................................)';
+  }
+
+  // เพิ่มแถวรายการสินค้า
+  function addRow() {
+    const table = document.getElementById('itemTable').getElementsByTagName('tbody')[0];
+    const newRow = table.insertRow();
+    newRow.innerHTML = `
+      <td style="text-align: center;" class="row-num"></td>
+      <td><input type="text" placeholder="ระบุรายการสินค้า"></td>
+      <td><input type="number" class="itemAmount" oninput="calculateTotal()" placeholder="0.00" style="text-align: right;"></td>
+      <td style="text-align: center;" class="no-print"><button type="button" class="btn-action" onclick="deleteRow(this)">X</button></td>
+    `;
+    updateRowNumbers();
+  }
+
+  // ลบแถวรายการสินค้า
+  function deleteRow(btn) {
+    const row = btn.parentNode.parentNode;
+    if (row.parentNode.rows.length > 1) {
+      row.parentNode.removeChild(row);
+      updateRowNumbers();
+      calculateTotal();
+    } else {
+      alert('ต้องมีรายการสินค้าอย่างน้อย 1 รายการ');
+    }
+  }
+
+  // อัปเดตเลขลำดับ
+  function updateRowNumbers() {
+    const rows = document.querySelectorAll('#itemTable tbody tr');
+    rows.forEach((row, index) => {
+      row.querySelector('.row-num').innerText = index + 1;
+    });
+  }
+
+  // ระบบคำนวณเงินและแปลงตัวเลขเป็นตัวหนังสือภาษาไทย
+  function calculateTotal() {
+    const amounts = document.querySelectorAll('.itemAmount');
+    let total = 0;
+    amounts.forEach(input => {
+      total += parseFloat(input.value) || 0;
+    });
+
+    document.getElementById('totalText').innerText = total.toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('thaiText').innerText = `(${arabicToThaiBaht(total)})`;
+  }
+
+  function arabicToThaiBaht(number) {
+    if (number === 0) return 'ศูนย์บาทถ้วน';
+    const numbers = ['', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า'];
+    const units = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน', 'ล้าน'];
+    
+    let [integer, fraction] = number.toFixed(2).split('.');
+    let bahtText = '';
+    
+    let len = integer.length;
+    for (let i = 0; i < len; i++) {
+      let digit = parseInt(integer.charAt(i));
+      let pos = len - i - 1;
+      if (digit !== 0) {
+        if (pos === 1 && digit === 1) bahtText += 'สิบ';
+        else if (pos === 1 && digit === 2) bahtText += 'ยี่สิบ';
+        else if (pos === 0 && digit === 1 && len > 1) bahtText += 'เอ็ด';
+        else bahtText += numbers[digit] + units[pos];
+      }
+    }
+    bahtText += 'บาท';
+
+    if (fraction === '00') {
+      bahtText += 'ถ้วน';
+    } else {
+      let d1 = parseInt(fraction.charAt(0));
+      let d2 = parseInt(fraction.charAt(1));
+      if (d1 === 1) bahtText += 'สิบ';
+      else if (d1 === 2) bahtText += 'ยี่สิบ';
+      else if (d1 > 2) bahtText += numbers[d1] + 'สิบ';
+      
+      if (d2 === 1 && d1 > 0) bahtText += 'เอ็ด';
+      else if (d2 > 0) bahtText += numbers[d2];
+      bahtText += 'สตางค์';
+    }
+    return bahtText;
+  }
+
+  // ระบบวาดลายเซ็น (Signature Pad)
+  const canvas = document.getElementById('sigCanvas');
+  const ctx = canvas.getContext('2d');
+  let isDrawing = false;
+
+  function resizeCanvas() {
+    canvas.width = canvas.parentElement.clientWidth;
+    canvas.height = 100;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  }
+
+  function startDrawing(e) { isDrawing = true; draw(e); }
+  function stopDrawing() { isDrawing = false; ctx.beginPath(); }
+  function draw(e) {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const pos = getPos(e);
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#000080';
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+  }
+
+  canvas.addEventListener('mousedown', startDrawing);
+  canvas.addEventListener('mouseup', stopDrawing);
+  canvas.addEventListener('mousemove', draw);
+  canvas.addEventListener('touchstart', startDrawing);
+  canvas.addEventListener('touchend', stopDrawing);
+  canvas.addEventListener('touchmove', draw);
+
+  function clearSignature() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+</script>
+
+</body>
+</html>
